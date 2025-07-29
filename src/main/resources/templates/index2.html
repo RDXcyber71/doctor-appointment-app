@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediConnect - Online Doctor Appointment</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator/qrcode.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        /* আপনার ফাইল থেকে সম্পূর্ণ স্টাইল অপরিবর্তিত রাখা হয়েছে */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Poppins', sans-serif; background-color: #f0f4f8; }
+        .form-card { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.3); box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15); }
+        .input-field { background: rgba(255, 255, 255, 0.9); border: 1px solid rgba(226, 232, 240, 1); }
+        .input-field:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
+        .btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+    </style>
+</head>
+<body class="min-h-screen py-8 px-4 sm:px-6">
+
+    <div class="max-w-4xl mx-auto">
+        <div class="form-card rounded-2xl p-6 sm:p-8 mb-8 relative">
+            <div class="bg-gradient-to-r from-blue-500 to-blue-700 rounded-xl p-6 mb-8 shadow-md">
+                 <h2 class="text-2xl font-bold text-white">Book Your Appointment</h2>
+            </div>
+            
+            <form id="appointmentForm" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="form-group"><label>Full Name*</label><input type="text" name="patientName" required class="input-field w-full px-4 py-3 rounded-lg"></div>
+                    <div class="form-group"><label>Mobile Number*</label><input type="tel" name="mobileNumber" required class="input-field w-full px-4 py-3 rounded-lg"></div>
+                    <div class="form-group"><label>Gender*</label><select name="gender" required class="input-field w-full px-4 py-3 rounded-lg"><option value="" disabled selected>Select gender</option><option value="male">Male</option><option value="female">Female</option></select></div>
+                    <div class="form-group"><label>Age*</label><input type="number" name="age" required class="input-field w-full px-4 py-3 rounded-lg"></div>
+                    <div class="form-group"><label>Weight (kg)</label><input type="number" name="weight" class="input-field w-full px-4 py-3 rounded-lg"></div>
+                    <div class="form-group"><label>Height (cm)</label><input type="number" name="height" class="input-field w-full px-4 py-3 rounded-lg"></div>
+                    <div class="form-group md:col-span-2"><label>Email Address*</label><input type="email" name="email" required class="input-field w-full px-4 py-3 rounded-lg"></div>
+                    <div class="form-group md:col-span-2"><label>Address*</label><textarea name="address" required rows="3" class="input-field w-full px-4 py-3 rounded-lg"></textarea></div>
+                </div>
+                
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl">
+                    <h3 class="text-lg">Select Appointment Date*</h3>
+                    <input type="text" id="appointmentDate" name="appointmentDate" required class="input-field w-full px-4 py-3 rounded-lg mt-2">
+                </div>
+                
+                <div class="text-center pt-6"><button type="submit" class="btn-primary text-white font-medium py-3 px-10 rounded-xl shadow-lg"><span class="relative">Book Appointment</span></button></div>
+            </form>
+        </div>
+        
+        </div>
+    
+    <div id="successModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden backdrop-blur-sm">
+        <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 success-animation shadow-2xl">
+            <div id="receipt-content" class="bg-white p-4">
+                <div class="text-center">
+                    <h3 class="text-2xl font-bold text-gray-900 mb-2">Appointment Confirmed!</h3>
+                    <p class="text-gray-600 mb-6">Your appointment has been successfully scheduled.</p>
+                    <div class="bg-blue-50 rounded-xl p-6 mb-6 border text-left space-y-3">
+                        <div class="flex justify-between"><strong>Patient Name:</strong> <span id="confirm-name"></span></div>
+                        <div class="flex justify-between"><strong>Appointment ID:</strong> <span id="confirm-id"></span></div>
+                        <div class="flex justify-between"><strong>Date:</strong> <span id="confirm-date"></span></div>
+                        <div class="flex justify-between"><strong>Serial No:</strong> <span id="confirm-serial"></span></div>
+                    </div>
+                    <div class="flex justify-center" id="qrcode"></div>
+                </div>
+            </div>
+            <div class="flex space-x-4 pt-6">
+                <button id="downloadBtn" class="flex-1 bg-white border border-blue-600 text-blue-600 py-3 rounded-lg">Download Receipt</button>
+                <button id="closeModal" class="flex-1 bg-blue-600 text-white py-3 rounded-lg">Close</button>
+            </div>
+        </div>
+    </div>
+
+<script th="remove">
+// This is a placeholder for development and will be replaced by the Thymeleaf script below.
+const availableDates = ["2025-08-10", "2025-08-12", "2025-08-18"];
+</script>
+
+<script th:inline="javascript">
+/*<![CDATA[*/
+const availableDates = /*[[${availableDates}]]*/ [];
+let confirmedAppointmentData = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    flatpickr("#appointmentDate", { minDate: "today", dateFormat: "Y-m-d", enable: availableDates });
+
+    const form = document.getElementById('appointmentForm');
+    const successModal = document.getElementById('successModal');
+    const closeModalBtn = document.getElementById('closeModal');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const submitBtn = form.querySelector('button[type="submit"]');
+
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        if (!form.checkValidity()) { form.reportValidity(); return; }
+        submitBtn.disabled = true;
+        submitBtn.querySelector('span').textContent = 'Submitting...';
+
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+        data.weight = data.weight || 0;
+        data.height = data.height || 0;
+
+        try {
+            const response = await fetch('/api/submit_appointment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (!response.ok) throw new Error('Server error');
+
+            const confirmedAppointment = await response.json();
+            confirmedAppointmentData = confirmedAppointment;
+
+            document.getElementById('confirm-name').textContent = confirmedAppointment.patientName;
+            document.getElementById('confirm-id').textContent = "AP-" + confirmedAppointment.tokenId;
+            document.getElementById('confirm-date').textContent = confirmedAppointment.appointmentDate;
+            document.getElementById('confirm-serial').textContent = confirmedAppointment.serialNo;
+
+            const qrContainer = document.getElementById('qrcode');
+            qrContainer.innerHTML = '';
+            const qr = qrcode(0, 'L');
+            qr.addData(confirmedAppointment.tokenId);
+            qr.make();
+            qrContainer.innerHTML = qr.createImgTag(4, 4);
+
+            successModal.classList.remove('hidden');
+        } catch (error) {
+            console.error('Submission failed:', error);
+            alert('An error occurred.');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.querySelector('span').textContent = 'Book Appointment';
+        }
+    });
+
+    closeModalBtn.addEventListener('click', () => { successModal.classList.add('hidden'); form.reset(); });
+
+    downloadBtn.addEventListener('click', () => {
+        if (!confirmedAppointmentData) return;
+        const receiptContent = document.getElementById('receipt-content');
+        html2canvas(receiptContent, { scale: 2 }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `Appointment_Receipt_${confirmedAppointmentData.tokenId}.png`;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+        });
+    });
+});
+/*]]>*/
+</script>
+
+</body>
+</html>
